@@ -1,0 +1,79 @@
+# --- Java / Spring Boot ---
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# JVM crash logs (various)
+core.*
+
+# --- Build outputs (Maven / Gradle) ---
+target/
+build/
+out/
+.gradle/
+.mvn/wrapper/maven-wrapper.jar
+
+# Keep Gradle wrapper jar in VCS (recommended)
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Spring / app runtime ---
+*.pid
+logs/
+log/
+tmp/
+temp/
+
+# --- IDEs ---
+## IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+## Eclipse / STS
+.project
+.classpath
+.settings/
+.springBeans
+
+## VS Code
+.vscode/
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+*~
+*.swp
+*.swo
+*.tmp
+
+# --- Environment / secrets (do not commit) ---
+.env
+.env.*
+!.env.example
+
+*.key
+*.pem
+*.p12
+*.jks
+
+# --- Coverage / reports ---
+coverage/
+.nyc_output/
+*.lcov
+*.exec
+*.hprof
+*.jfr
+
+# --- Test / tooling ---
+.factorypath
+.apt_generated/
+.sts4-cache/
+
+# --- Docker / misc ---
+docker-compose.override.yml
+
