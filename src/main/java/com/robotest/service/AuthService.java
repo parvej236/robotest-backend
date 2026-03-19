@@ -336,6 +336,7 @@ public class AuthService {
                         .email(user.getEmail())
                         .roles(roles)
                         .emailVerified(user.isEmailVerified())
+                        .profileImageUrl(user.getProfileImageUrl())
                         .build())
                 .build();
     }

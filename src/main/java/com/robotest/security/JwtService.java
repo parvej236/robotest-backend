@@ -26,7 +26,13 @@ public class JwtService {
     @Value("${app.jwt.refresh-token-expiration}")
     private long refreshExpiration;
 
-    // ── Generate tokens ────────────────────────────────────────
+    // ── FIX: allow 10 seconds of clock skew ───────────────────
+    // The log showed "expired by 35 milliseconds" — the token was
+    // technically valid when issued but expired in transit.
+    // 10 seconds of skew handles network latency + clock drift
+    // without meaningfully reducing security.
+    private static final long CLOCK_SKEW_MS = 10_000L;
+
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "ACCESS");
@@ -39,9 +45,9 @@ public class JwtService {
         return buildToken(claims, userDetails.getUsername(), refreshExpiration);
     }
 
-    private String buildToken(Map<String, Object> extraClaims, String subject, long expiry) {
+    private String buildToken(Map<String, Object> claims, String subject, long expiry) {
         return Jwts.builder()
-                .setClaims(extraClaims)
+                .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiry))
@@ -49,44 +55,54 @@ public class JwtService {
                 .compact();
     }
 
-    // ── Validate ───────────────────────────────────────────────
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             return extractEmail(token).equals(userDetails.getUsername())
                     && !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
-            log.debug("Token invalid: {}", e.getMessage());
+            log.debug("Token validation failed: {}", e.getMessage());
             return false;
         }
     }
 
+    // ── FIX: parse with clock skew tolerance ──────────────────
+    // Allows tokens that expired up to CLOCK_SKEW_MS ago to still be valid.
+    // This prevents the "expired by 35ms" edge case that caused
+    // 20 identical JWT expiry logs in a row.
     public boolean isTokenExpired(String token) {
         try {
-            return extractClaim(token, Claims::getExpiration).before(new Date());
+            Date expiration = extractClaimWithSkew(token, Claims::getExpiration);
+            return expiration.before(new Date());
         } catch (ExpiredJwtException e) {
             return true;
         }
     }
 
-    // ── Extract ────────────────────────────────────────────────
     public String extractEmail(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return extractClaimWithSkew(token, Claims::getSubject);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
+    // Parse allowing clock skew — used for all validation
+    private <T> T extractClaimWithSkew(String token, Function<Claims, T> resolver) {
         return resolver.apply(
                 Jwts.parserBuilder()
                         .setSigningKey(signingKey())
+                        .setAllowedClockSkewSeconds(CLOCK_SKEW_MS / 1000)  // 10 seconds
                         .build()
                         .parseClaimsJws(token)
                         .getBody()
         );
     }
 
+    // Keep this for non-skew cases if ever needed
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
+        return extractClaimWithSkew(token, resolver);
+    }
+
     private Key signingKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public long getAccessExpiration() { return accessExpiration; }
+    public long getAccessExpiration()  { return accessExpiration; }
     public long getRefreshExpiration() { return refreshExpiration; }
 }

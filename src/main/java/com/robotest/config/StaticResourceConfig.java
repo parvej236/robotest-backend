@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
@@ -13,14 +14,22 @@ public class StaticResourceConfig implements WebMvcConfigurer {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    /**
-     * Serves uploaded files publicly at:
-     *   GET http://localhost:8080/uploads/profiles/filename.jpg
-     */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String location = Paths.get(uploadDir).toAbsolutePath().toUri().toString();
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(location);
+        // Resolve to absolute path — relative paths fail when app runs from a different working dir
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
+
+        // Must end with "/" for Spring to serve files inside the directory
+        String location = uploadPath.toUri().toString();
+        if (!location.endsWith("/")) {
+            location = location + "/";
+        }
+
+        System.out.println(">>> Static files served from: " + location);
+
+        registry
+                .addResourceHandler("/uploads/**")
+                .addResourceLocations(location)
+                .setCachePeriod(3600);
     }
 }

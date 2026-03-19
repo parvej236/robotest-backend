@@ -22,17 +22,21 @@ public class UserService {
     private final UserRepository     userRepository;
     private final FileStorageService fileStorageService;
 
-    // GET /api/users/me
+    // ── Public helper used by other services ──────────────────
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> AppException.notFound("User not found: " + email));
+    }
+
+    // ── GET PROFILE ───────────────────────────────────────────
     public ApiResponse<UserProfileResponse> getProfile(String email) {
         return ApiResponse.success("Profile fetched", toResponse(findByEmail(email)));
     }
 
-    // PUT /api/users/me
+    // ── UPDATE PROFILE ────────────────────────────────────────
     @Transactional
-    public ApiResponse<UserProfileResponse> updateProfile(String email,
-                                                          UpdateProfileRequest req) {
+    public ApiResponse<UserProfileResponse> updateProfile(String email, UpdateProfileRequest req) {
         User user = findByEmail(email);
-
         if (req.getFullName()           != null) user.setFullName(req.getFullName().trim());
         if (req.getGender()             != null) user.setGender(req.getGender());
         if (req.getRegistrationNumber() != null) user.setRegistrationNumber(req.getRegistrationNumber().trim());
@@ -40,28 +44,23 @@ public class UserService {
         if (req.getUniversity()         != null) user.setUniversity(req.getUniversity().trim());
         if (req.getHobby()              != null) user.setHobby(req.getHobby().trim());
         if (req.getBio()                != null) user.setBio(req.getBio().trim());
-
         return ApiResponse.success("Profile updated", toResponse(userRepository.save(user)));
     }
 
-    // POST /api/users/me/avatar
+    // ── UPLOAD AVATAR ─────────────────────────────────────────
     @Transactional
     public ApiResponse<UserProfileResponse> uploadAvatar(String email, MultipartFile file) {
         User user = findByEmail(email);
-
-        // Delete old avatar first
         if (user.getProfileImageUrl() != null)
             fileStorageService.delete(user.getProfileImageUrl());
-
-        user.setProfileImageUrl(fileStorageService.storeProfileImage(file));
+        user.setProfileImageUrl(fileStorageService.storeFile(file, "profiles"));
         return ApiResponse.success("Avatar uploaded", toResponse(userRepository.save(user)));
     }
 
-    // DELETE /api/users/me/avatar
+    // ── DELETE AVATAR ─────────────────────────────────────────
     @Transactional
     public ApiResponse<UserProfileResponse> deleteAvatar(String email) {
         User user = findByEmail(email);
-
         if (user.getProfileImageUrl() != null) {
             fileStorageService.delete(user.getProfileImageUrl());
             user.setProfileImageUrl(null);
@@ -70,12 +69,7 @@ public class UserService {
         return ApiResponse.success("Avatar removed", toResponse(user));
     }
 
-    // ── Helpers ───────────────────────────────────────────────
-    private User findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> AppException.notFound("User not found"));
-    }
-
+    // ── MAPPER ────────────────────────────────────────────────
     public UserProfileResponse toResponse(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
@@ -93,7 +87,7 @@ public class UserService {
                 .emailVerified(user.isEmailVerified())
                 .roles(user.getRoles().stream()
                         .map(r -> r.getName().name())
-                        .collect(Collectors.toList()))
+                        .collect(java.util.stream.Collectors.toList()))
                 .createdAt(user.getCreatedAt())
                 .build();
     }

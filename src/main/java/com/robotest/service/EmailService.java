@@ -132,4 +132,17 @@ public class EmailService {
             + "</table></td></tr></table>"
             + "</body></html>";
     }
+
+    @Async
+    public void sendRegistrationSuccessEmail(String to, String name, String contestName) {
+        send(to,
+                "Robotest — Contest Registration Confirmed",
+                buildEmail(name,
+                        "Registration Confirmed!",
+                        "You have successfully registered for: <strong>" + contestName + "</strong>",
+                        frontendUrl + "/contests",
+                        "View Contest",
+                        "Good luck in the competition!")
+        );
+    }
 }
