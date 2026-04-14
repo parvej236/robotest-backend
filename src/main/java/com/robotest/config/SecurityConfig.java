@@ -3,6 +3,7 @@ package com.robotest.config;
 import com.robotest.security.JwtAuthenticationFilter;
 import com.robotest.security.UserDetailsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -32,6 +33,9 @@ import java.util.List;
 @EnableMethodSecurity
 @Slf4j
 public class SecurityConfig {
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl  userDetailsServiceImpl;
@@ -115,7 +119,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(
-                "http://localhost:5173",
+                frontendUrl,
                 "http://localhost:3000",
                 "http://192.168.5.7:5173",
                 "http://192.168.5.7:3000"
