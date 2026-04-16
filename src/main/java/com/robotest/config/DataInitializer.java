@@ -34,14 +34,14 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // ── Seed admin account ────────────────────────────────
-        if (!userRepository.existsByEmail("alamparvej2024@gmail.com")) {
+        if (!userRepository.existsByEmail("hridoyq236@gmail.com")) {
             Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).orElseThrow();
             Role userRole  = roleRepository.findByName(RoleName.ROLE_USER).orElseThrow();
 
             User admin = User.builder()
                     .fullName("System Administrator")
                     .username("admin")
-                    .email("alamparvej2024@gmail.com")
+                    .email("hridoyq236@gmail.com")
                     .password(passwordEncoder.encode("Admin@1234"))
                     .enabled(true)
                     .emailVerified(true)
@@ -49,7 +49,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             userRepository.save(admin);
-            log.info("Admin created ─ email: alamparvej2024@gmail.com  password: Admin@1234");
+            log.info("Admin created ─ email: hridoyq236@gmail.com  password: Admin@1234");
         }
     }
 }
