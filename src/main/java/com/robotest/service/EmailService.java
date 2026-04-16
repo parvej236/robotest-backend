@@ -27,7 +27,7 @@ public class EmailService {
     public void sendVerificationEmail(String to, String name, String token) {
         String link = frontendUrl + "/verify-email?token=" + token;
         send(to,
-            "Robotest — Verify Your Email",
+            "RMEDU — Verify Your Email",
             buildEmail(name,
                 "Verify Your Email Address",
                 "Thank you for registering! Click the button below to verify your "
@@ -42,7 +42,7 @@ public class EmailService {
     @Async
     public void sendWelcomeEmail(String to, String name) {
         send(to,
-            "Welcome to Robotest!",
+            "Welcome to RMEDU!",
             buildEmail(name,
                 "Your Account Is Active",
                 "Your email has been verified successfully. Your account is now fully active!",
@@ -57,7 +57,7 @@ public class EmailService {
     public void sendPasswordResetEmail(String to, String name, String token) {
         String link = frontendUrl + "/reset-password?token=" + token;
         send(to,
-            "Robotest — Reset Your Password",
+            "RMEDU — Reset Your Password",
             buildEmail(name,
                 "Password Reset Request",
                 "We received a request to reset your password. Click the button below to set a new one.",
@@ -72,7 +72,7 @@ public class EmailService {
     @Async
     public void sendPasswordChangedEmail(String to, String name) {
         send(to,
-            "Robotest — Password Changed",
+            "RMEDU — Password Changed",
             buildEmail(name,
                 "Password Changed Successfully",
                 "Your password has been changed. If you did not make this change, "
@@ -111,7 +111,7 @@ public class EmailService {
             // header
             + "<tr><td style=\"background:#0a0a0f;padding:20px 32px;border-bottom:2px solid #ff0033;\">"
             + "<span style=\"font-family:monospace;font-size:20px;font-weight:900;"
-            + "color:#ff0033;letter-spacing:5px;\">ROBOTEST</span>"
+            + "color:#ff0033;letter-spacing:5px;\">RMEDU</span>"
             + "</td></tr>"
             // body
             + "<tr><td style=\"padding:40px 32px;\">"
@@ -127,7 +127,7 @@ public class EmailService {
             // footer
             + "<tr><td style=\"background:#07070f;padding:16px 32px;border-top:1px solid #ffffff11;\">"
             + "<p style=\"color:#444;font-size:11px;margin:0;\">"
-            + "&copy; 2024 Robotest Platform. All rights reserved.</p>"
+            + "&copy; 2026 RMEDU Platform. All rights reserved.</p>"
             + "</td></tr>"
             + "</table></td></tr></table>"
             + "</body></html>";
@@ -136,13 +136,31 @@ public class EmailService {
     @Async
     public void sendRegistrationSuccessEmail(String to, String name, String contestName) {
         send(to,
-                "Robotest — Contest Registration Confirmed",
+                "RMEDU — Contest Registration Confirmed",
                 buildEmail(name,
                         "Registration Confirmed!",
                         "You have successfully registered for: <strong>" + contestName + "</strong>",
                         frontendUrl + "/contests",
                         "View Contest",
                         "Good luck in the competition!")
+        );
+    }
+
+    @Async
+    public void sendNewContestEmail(String to, String name, String contestName, String contestId) {
+        String link = frontendUrl + "/contests/" + contestId;
+
+        send(to,
+                "RMEDU 🚀 New Contest Available!",
+                buildEmail(
+                        name,
+                        "A New Contest Has Been Created!",
+                        "A new contest <strong>" + contestName + "</strong> is now live on RMEDU! "
+                                + "Participate now and test your skills against others.",
+                        link,
+                        "Join Contest",
+                        "Don't miss out! Make sure to register before the contest starts."
+                )
         );
     }
 }

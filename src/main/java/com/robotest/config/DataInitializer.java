@@ -34,14 +34,14 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // ── Seed admin account ────────────────────────────────
-        if (!userRepository.existsByEmail("hridoyq236@gmail.com")) {
+        if (!userRepository.existsByEmail("hridoyq264@gmail.com")) {
             Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).orElseThrow();
             Role userRole  = roleRepository.findByName(RoleName.ROLE_USER).orElseThrow();
 
             User admin = User.builder()
                     .fullName("System Administrator")
                     .username("admin")
-                    .email("hridoyq236@gmail.com")
+                    .email("hridoyq264@gmail.com")
                     .password(passwordEncoder.encode("Admin@1234"))
                     .enabled(true)
                     .emailVerified(true)

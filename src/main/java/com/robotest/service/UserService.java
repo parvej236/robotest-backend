@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,5 +91,9 @@ public class UserService {
                         .collect(java.util.stream.Collectors.toList()))
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    public List<User> findAll() {
+        return userRepository.findAll();
     }
 }

@@ -73,6 +73,17 @@ public class ContestService {
                 .build();
         Contest saved = contestRepository.save(contest);
         log.info("Contest created: {}", saved.getName());
+
+        List<User> users = userService.findAll();
+        users.forEach(user -> {
+            emailService.sendNewContestEmail(
+                    user.getEmail(),
+                    user.getFullName(),
+                    saved.getName(),
+                    saved.getId().toString()
+            );
+        });
+
         return ApiResponse.success("Contest created", toDto(saved));
     }
 
