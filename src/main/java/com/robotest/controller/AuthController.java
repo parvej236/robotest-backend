@@ -137,4 +137,20 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> validateToken(@RequestParam String token) {
         return ResponseEntity.ok(authService.validateToken(token));
     }
+
+    /**
+     * GET /api/auth/check-username?username=...
+     */
+    @GetMapping("/check-username")
+    public ResponseEntity<Boolean> checkUsername(@RequestParam String username) {
+        return ResponseEntity.ok(authService.existsByUsername(username));
+    }
+
+    /**
+     * GET /api/auth/check-email?email=...
+     */
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestParam String email) {
+        return ResponseEntity.ok(authService.existsByEmail(email));
+    }
 }

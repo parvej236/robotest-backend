@@ -29,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
         if (roleRepository.count() == 0) {
             roleRepository.save(Role.builder().name(RoleName.ROLE_USER).build());
             roleRepository.save(Role.builder().name(RoleName.ROLE_ADMIN).build());
+            roleRepository.save(Role.builder().name(RoleName.ROLE_JUDGE).build());
             log.info("Roles seeded: ROLE_USER, ROLE_ADMIN");
         }
 

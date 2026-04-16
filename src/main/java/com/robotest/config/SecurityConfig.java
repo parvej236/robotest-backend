@@ -72,6 +72,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/verify-email").permitAll()
                 .requestMatchers("/api/auth/resend-verification").permitAll()
+                .requestMatchers("/api/auth/check-username").permitAll()
+                .requestMatchers("/api/auth/check-email").permitAll()
                 .requestMatchers("/api/auth/forgot-password").permitAll()
                 .requestMatchers("/api/auth/reset-password").permitAll()
                 .requestMatchers("/api/auth/refresh-token").permitAll()

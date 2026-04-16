@@ -355,4 +355,12 @@ public class AuthService {
                 .createdAt(user.getCreatedAt())
                 .build();
     }
+
+    public Boolean existsByUsername(String username) {
+        return userRepository.findByUsername(username).isPresent();
+    }
+
+    public Boolean existsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
 }

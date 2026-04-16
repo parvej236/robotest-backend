@@ -40,7 +40,7 @@ public class ContestScheduler {
      * contests to flip back and forth every minute. A contest should never
      * go backwards in status.
      */
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 5_000)
     public void updateContestStatuses() {
         LocalDateTime now = LocalDateTime.now();
 
