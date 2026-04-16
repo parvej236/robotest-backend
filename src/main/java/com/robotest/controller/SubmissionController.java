@@ -24,4 +24,20 @@ public class SubmissionController {
         return ResponseEntity.ok(
                 submissionService.submitAnswers(contestId, userDetails.getUsername(), request));
     }
+
+    // ─────────────────────────────────────────────
+    // Check if user already submitted (IMPORTANT)
+    // ─────────────────────────────────────────────
+    @GetMapping("/contest/{contestId}/exists")
+    public ResponseEntity<Boolean> hasSubmitted(
+            @PathVariable Long contestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        boolean exists = submissionService.hasUserSubmitted(
+                contestId,
+                userDetails.getUsername()
+        );
+
+        return ResponseEntity.ok(exists);
+    }
 }

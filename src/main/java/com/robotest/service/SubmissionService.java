@@ -84,4 +84,8 @@ public class SubmissionService {
         return q.getCustomAnswerKey() != null
                 && q.getCustomAnswerKey().equalsIgnoreCase(answer.trim());
     }
+
+    public boolean hasUserSubmitted(Long contestId, String email) {
+        return submissionRepository.existsByContest_IdAndUser_Email(contestId, email);
+    }
 }

@@ -24,4 +24,6 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
         ORDER BY correctCount DESC, lastTime ASC
         """)
     List<Object[]> findLeaderboardData(Long contestId);
+
+    boolean existsByContest_IdAndUser_Email(Long contestId, String email);
 }
