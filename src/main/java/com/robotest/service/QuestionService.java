@@ -62,7 +62,7 @@ public class QuestionService {
                 .build();
 
         if (image != null && !image.isEmpty())
-            q.setImageUrl(fileStorageService.storeProfileImage(image, "questions/images"));
+            q.setImageUrl(fileStorageService.storeFile(image, "questions/images"));
         if (video != null && !video.isEmpty())
             q.setVideoUrl(fileStorageService.storeFile(video, "questions/videos"));
 
@@ -87,7 +87,7 @@ public class QuestionService {
 
         if (image != null && !image.isEmpty()) {
             if (q.getImageUrl() != null) fileStorageService.delete(q.getImageUrl());
-            q.setImageUrl(fileStorageService.storeProfileImage(image, "questions/images"));
+            q.setImageUrl(fileStorageService.storeFile(image, "questions/images"));
         }
         if (video != null && !video.isEmpty()) {
             if (q.getVideoUrl() != null) fileStorageService.delete(q.getVideoUrl());

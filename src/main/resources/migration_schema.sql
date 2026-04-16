@@ -1,12 +1,3 @@
--- 1. Create the Table
-CREATE TABLE IF NOT EXISTS rulebook (
-                                        id BIGINT PRIMARY KEY,
-                                        sections JSONB NOT NULL,
-                                        metadata JSONB NOT NULL,
-                                        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Comprehensive Initialization from Official Rulebook
 INSERT INTO rulebook (id, sections, metadata)
 VALUES (
            1,
@@ -49,3 +40,93 @@ ON CONFLICT (id) DO UPDATE
     SET sections = EXCLUDED.sections,
         metadata = EXCLUDED.metadata,
         updated_at = CURRENT_TIMESTAMP;
+
+-- Seed 50 contests with 5 questions each (only when contests table is empty)
+DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM contests) THEN
+            WITH ins_contests AS (
+                INSERT INTO contests (
+                                      name,
+                                      description,
+                                      contest_date,
+                                      registration_start,
+                                      registration_end,
+                                      contest_start,
+                                      contest_end,
+                                      status
+                    )
+                    SELECT
+                        ('Contest ' || i) AS name,
+                        ('Description for contest ' || i) AS description,
+
+                        -- contest_date == contest_start (used by UI)
+                        CASE
+                            WHEN i <= 15 THEN NOW() - INTERVAL '1 day'
+                            WHEN i <= 25 THEN NOW() - INTERVAL '10 days'
+                            WHEN i <= 35 THEN NOW() + INTERVAL '1 day'
+                            ELSE NOW() + INTERVAL '10 days'
+                            END AS contest_date,
+
+                        CASE
+                            WHEN i <= 15 THEN NOW() - INTERVAL '2 days'
+                            WHEN i <= 25 THEN NOW() - INTERVAL '20 days'
+                            WHEN i <= 35 THEN NOW() - INTERVAL '1 day'
+                            ELSE NOW() + INTERVAL '5 days'
+                            END AS registration_start,
+
+                        CASE
+                            WHEN i <= 15 THEN NOW() - INTERVAL '1 day'
+                            WHEN i <= 25 THEN NOW() - INTERVAL '15 days'
+                            WHEN i <= 35 THEN NOW() + INTERVAL '2 hours'
+                            ELSE NOW() + INTERVAL '6 days'
+                            END AS registration_end,
+
+                        CASE
+                            WHEN i <= 15 THEN NOW() - INTERVAL '1 day'
+                            WHEN i <= 25 THEN NOW() - INTERVAL '10 days'
+                            WHEN i <= 35 THEN NOW() + INTERVAL '1 day'
+                            ELSE NOW() + INTERVAL '10 days'
+                            END AS contest_start,
+
+                        CASE
+                            WHEN i <= 15 THEN NOW() + INTERVAL '1 day'
+                            WHEN i <= 25 THEN NOW() - INTERVAL '5 days'
+                            WHEN i <= 35 THEN NOW() + INTERVAL '2 days'
+                            ELSE NOW() + INTERVAL '11 days'
+                            END AS contest_end,
+
+                        'UPCOMING' AS status
+                    FROM generate_series(1, 20) AS g(i)
+                    RETURNING id
+            )
+            INSERT INTO questions (
+                contest_id,
+                description,
+                image_url,
+                video_url,
+                type,
+                correct_answer,
+                error_percentage,
+                custom_answer_key,
+                order_index,
+                points
+            )
+            SELECT
+                c.id AS contest_id,
+                ('Question for contest ' || c.id || ' #' || q.idx) AS description,
+                NULL AS image_url,
+                NULL AS video_url,
+
+                CASE WHEN (q.idx % 2) = 0 THEN 'NUMERIC_MCQ' ELSE 'CUSTOM' END AS type,
+
+                CASE WHEN (q.idx % 2) = 0 THEN (50.0 + q.idx) ELSE NULL END AS correct_answer,
+                CASE WHEN (q.idx % 2) = 0 THEN 5.0 ELSE NULL END AS error_percentage,
+                CASE WHEN (q.idx % 2) = 1 THEN ('ANSWER_' || c.id || '_' || q.idx) ELSE NULL END AS custom_answer_key,
+
+                q.idx AS order_index,
+                10 AS points
+            FROM ins_contests c
+                     CROSS JOIN generate_series(1, 5) AS q(idx);
+        END IF;
+    END $$;

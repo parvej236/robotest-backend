@@ -21,7 +21,7 @@ public class ContestScheduler {
     private final LeaderboardService leaderboardService;
 
     /**
-     * Runs every 60 seconds.
+     * Runs every 5 seconds.
      *
      * Correct state machine:
      *
