@@ -54,6 +54,7 @@ public class QuestionService {
                 .contest(contest)
                 .description(req.getDescription())
                 .type(req.getType())
+                .timeLimit(req.getTimeLimit())
                 .correctAnswer(req.getCorrectAnswer())
                 .errorPercentage(req.getErrorPercentage())
                 .customAnswerKey(req.getCustomAnswerKey())
@@ -79,6 +80,7 @@ public class QuestionService {
 
         q.setDescription(req.getDescription());
         q.setType(req.getType());
+        q.setTimeLimit(req.getTimeLimit());
         q.setCorrectAnswer(req.getCorrectAnswer());
         q.setErrorPercentage(req.getErrorPercentage());
         q.setCustomAnswerKey(req.getCustomAnswerKey());
@@ -126,6 +128,7 @@ public class QuestionService {
                 .imageUrl(q.getImageUrl())
                 .videoUrl(q.getVideoUrl())
                 .type(q.getType())
+                .timeLimit(q.getTimeLimit())
                 .correctAnswer(q.getCorrectAnswer())
                 .errorPercentage(q.getErrorPercentage())
                 .customAnswerKey(q.getCustomAnswerKey())

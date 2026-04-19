@@ -15,6 +15,9 @@ public class QuestionRequest {
     @NotNull(message = "Question type is required")
     private QuestionType type;
 
+    @Min(value = 0, message = "Time limit cannot be negative")
+    private Integer timeLimit; // Seconds
+
     private Double  correctAnswer;    // weight in grams for NUMERIC_MCQ
     private Double  errorPercentage;  // tolerance %
     private String  customAnswerKey;  // for CUSTOM type

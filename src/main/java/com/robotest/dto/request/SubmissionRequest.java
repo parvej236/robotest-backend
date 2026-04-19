@@ -1,10 +1,10 @@
 package com.robotest.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import java.util.Map;
 
 @Data
 public class SubmissionRequest {
-    // Map of questionId → submitted answer string
-    private Map<Long, String> answers;
+    @NotBlank(message = "Answer cannot be empty or blank")
+    private String answer;
 }

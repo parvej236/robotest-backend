@@ -3,6 +3,7 @@ package com.robotest.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -28,10 +29,11 @@ public class Submission {
     private Question question;
 
     private String submittedAnswer;
+    private Integer wrongCount;
 
     @Builder.Default
     private boolean correct = false;
 
-    @CreationTimestamp
+    @UpdateTimestamp
     private LocalDateTime submittedAt;
 }

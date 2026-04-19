@@ -3,6 +3,7 @@ package com.robotest.controller;
 import com.robotest.dto.request.SubmissionRequest;
 import com.robotest.dto.response.ApiResponse;
 import com.robotest.service.SubmissionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,13 +17,19 @@ public class SubmissionController {
 
     private final SubmissionService submissionService;
 
-    @PostMapping("/contest/{contestId}")
+    @PostMapping("/contest/{contestId}/question/{questionId}")
     public ResponseEntity<ApiResponse<String>> submit(
             @PathVariable Long contestId,
-            @RequestBody SubmissionRequest request,
+            @PathVariable Long questionId,
+            @Valid @RequestBody SubmissionRequest request, // Expecting {"answer": "12.5"}
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(
-                submissionService.submitAnswers(contestId, userDetails.getUsername(), request));
+                submissionService.submitSingleAnswer(
+                        contestId,
+                        userDetails.getUsername(),
+                        questionId,
+                        request.getAnswer()
+                ));
     }
 
     // ─────────────────────────────────────────────

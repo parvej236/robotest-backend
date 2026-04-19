@@ -78,11 +78,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/reset-password").permitAll()
                 .requestMatchers("/api/auth/refresh-token").permitAll()
                 .requestMatchers("/api/auth/validate-token").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests/active").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests/latest").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests/{id:[0-9]+}").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/contests/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/rulebook").permitAll()
+                    .requestMatchers("/api/submissions/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers("/api/users/me").authenticated()        // own profile — any user
                     .requestMatchers("/api/users/me/avatar").authenticated()  // own avatar — any user
