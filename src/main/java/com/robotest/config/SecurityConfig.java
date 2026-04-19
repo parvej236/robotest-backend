@@ -79,6 +79,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/refresh-token").permitAll()
                 .requestMatchers("/api/auth/validate-token").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/contests/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/rulebook").permitAll()
                     .requestMatchers("/api/submissions/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()

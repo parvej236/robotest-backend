@@ -2,6 +2,7 @@ package com.robotest.service;
 
 import com.robotest.dto.response.ApiResponse;
 import com.robotest.dto.response.LeaderboardEntryDto;
+import com.robotest.dto.response.ResultResponseDto;
 import com.robotest.entity.*;
 import com.robotest.exception.AppException;
 import com.robotest.repository.*;
@@ -30,37 +31,6 @@ public class LeaderboardService {
     public ApiResponse<List<LeaderboardEntryDto>> getLeaderboard(Long contestId) {
         contestService.findById(contestId); // verify exists
         return ApiResponse.success("Leaderboard fetched", buildLeaderboard(contestId));
-    }
-
-    public ApiResponse<Object> getMyResult(Long contestId, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> AppException.notFound("User not found"));
-        Optional<Result> result = resultRepository.findByUserIdAndContestId(user.getId(), contestId);
-        return ApiResponse.success("Result fetched", result.orElse(null));
-    }
-
-    @Transactional
-    public void calculateAndSaveResults(Long contestId) {
-        Contest contest = contestService.findById(contestId);
-        List<LeaderboardEntryDto> lb = buildLeaderboard(contestId);
-
-        for (LeaderboardEntryDto entry : lb) {
-            User user = userRepository.findById(entry.getUserId()).orElse(null);
-            if (user == null) continue;
-
-            Optional<Result> existing = resultRepository.findByUserIdAndContestId(user.getId(), contestId);
-            Result result = existing.orElse(Result.builder().user(user).contest(contest).build());
-
-            // Note: If your Result entity still uses Integer for correctCount,
-            // you might want to update it to Double to store the score,
-            // or cast/round it if it represents number of solved questions.
-            result.setCorrectCount((int) entry.getTotalScore());
-            result.setTotalQuestions(entry.getTotalQuestions());
-            result.setRank(entry.getRank());
-            result.setLastSubmissionTime(entry.getLastSubmissionTime());
-            resultRepository.save(result);
-        }
-        log.info("Results calculated for contest {}", contestId);
     }
 
     private List<LeaderboardEntryDto> buildLeaderboard(Long contestId) {
@@ -173,5 +143,64 @@ public class LeaderboardService {
                 .map(Submission::getSubmittedAt)
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
+    }
+
+    @Transactional
+    public void calculateAndSaveResults(Long contestId) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> AppException.notFound("Contest not found"));
+
+        List<LeaderboardEntryDto> lb = buildLeaderboard(contestId);
+
+        for (LeaderboardEntryDto entry : lb) {
+            User user = userRepository.findById(entry.getUserId()).orElse(null);
+            if (user == null) continue;
+
+            Result result = resultRepository.findByUserIdAndContestId(user.getId(), contestId)
+                    .orElse(Result.builder()
+                            .user(user)
+                            .contest(contest)
+                            .totalScore(entry.getTotalScore())
+                            .build());
+
+            // Map DTO question statuses to Entity question scores
+            Map<Long, Double> scoresMap = new HashMap<>();
+            int solvedCount = 0;
+
+            for (LeaderboardEntryDto.QuestionStatusDto qStatus : entry.getQuestionStatuses()) {
+                if (qStatus != null) {
+                    scoresMap.put(qStatus.getQuestionId(), qStatus.getScore());
+                    if (qStatus.isCorrect()) {
+                        solvedCount++;
+                    }
+                }
+            }
+
+            result.setTotalScore(entry.getTotalScore());
+            result.setSolvedCount(solvedCount);
+            result.setRank(entry.getRank());
+
+            resultRepository.save(result);
+        }
+        log.info("Detailed results saved for contest {}", contestId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResultResponseDto> getMyResults(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> AppException.notFound("User not found"));
+
+        List<Result> results = resultRepository.findByUserId(user.getId());
+
+        return results.stream().map(result -> ResultResponseDto.builder()
+                .id(result.getId())
+                .contestId(result.getContest().getId())
+                .contestName(result.getContest().getName())
+                .totalScore(result.getTotalScore())
+                .solvedCount(result.getSolvedCount())
+                .rank(result.getRank())
+                .calculatedAt(result.getCalculatedAt())
+                .build()
+        ).collect(Collectors.toList());
     }
 }
