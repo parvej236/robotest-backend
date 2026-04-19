@@ -26,4 +26,6 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Object[]> findLeaderboardData(Long contestId);
 
     boolean existsByContest_IdAndUser_Email(Long contestId, String email);
+
+    List<Submission> findByContestId(Long contestId);
 }

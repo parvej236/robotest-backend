@@ -10,10 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,18 +21,17 @@ import java.util.Optional;
 public class LeaderboardService {
 
     private final SubmissionRepository submissionRepository;
-    private final QuestionRepository   questionRepository;
-    private final UserRepository       userRepository;
-    private final ResultRepository     resultRepository;
-    private final ContestService       contestService;
+    private final QuestionRepository questionRepository;
+    private final UserRepository userRepository;
+    private final ResultRepository resultRepository;
+    private final ContestService contestService;
+    private final ContestRepository contestRepository;
 
-    // ── GET LEADERBOARD ───────────────────────────────────────
     public ApiResponse<List<LeaderboardEntryDto>> getLeaderboard(Long contestId) {
         contestService.findById(contestId); // verify exists
         return ApiResponse.success("Leaderboard fetched", buildLeaderboard(contestId));
     }
 
-    // ── GET MY RESULT ─────────────────────────────────────────
     public ApiResponse<Object> getMyResult(Long contestId, String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.notFound("User not found"));
@@ -40,7 +39,6 @@ public class LeaderboardService {
         return ApiResponse.success("Result fetched", result.orElse(null));
     }
 
-    // ── CALCULATE AND SAVE FINAL RESULTS (called by scheduler) ──
     @Transactional
     public void calculateAndSaveResults(Long contestId) {
         Contest contest = contestService.findById(contestId);
@@ -52,7 +50,11 @@ public class LeaderboardService {
 
             Optional<Result> existing = resultRepository.findByUserIdAndContestId(user.getId(), contestId);
             Result result = existing.orElse(Result.builder().user(user).contest(contest).build());
-            result.setCorrectCount(entry.getCorrectCount());
+
+            // Note: If your Result entity still uses Integer for correctCount,
+            // you might want to update it to Double to store the score,
+            // or cast/round it if it represents number of solved questions.
+            result.setCorrectCount((int) entry.getTotalScore());
             result.setTotalQuestions(entry.getTotalQuestions());
             result.setRank(entry.getRank());
             result.setLastSubmissionTime(entry.getLastSubmissionTime());
@@ -61,32 +63,115 @@ public class LeaderboardService {
         log.info("Results calculated for contest {}", contestId);
     }
 
-    // ── Private: build leaderboard from raw submissions ───────
     private List<LeaderboardEntryDto> buildLeaderboard(Long contestId) {
-        List<Object[]> raw = submissionRepository.findLeaderboardData(contestId);
-        int total = (int) questionRepository.countByContestId(contestId);
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> AppException.notFound("Contest not found"));
+
+        List<Question> questions = questionRepository.findByContestIdOrderByOrderIndexAsc(contestId);
+        List<Submission> allSubmissions = submissionRepository.findByContestId(contestId);
+
+        // Group by User
+        Map<Long, List<Submission>> userSubmissionsMap = allSubmissions.stream()
+                .collect(Collectors.groupingBy(s -> s.getUser().getId()));
 
         List<LeaderboardEntryDto> entries = new ArrayList<>();
-        int rank = 1;
-        for (Object[] row : raw) {
-            Long          userId       = (Long)          row[0];
-            long          correctCount = (long)          row[1];
-            LocalDateTime lastTime     = (LocalDateTime) row[2];
+
+        for (Map.Entry<Long, List<Submission>> userEntry : userSubmissionsMap.entrySet()) {
+            Long userId = userEntry.getKey();
+            List<Submission> userSubs = userEntry.getValue();
 
             User user = userRepository.findById(userId).orElse(null);
             if (user == null) continue;
 
+            double totalScore = 0;
+            List<LeaderboardEntryDto.QuestionStatusDto> qStatuses = new ArrayList<>();
+
+            for (Question q : questions) {
+                // Get the correct submission for this specific question
+                Submission correctSub = userSubs.stream()
+                        .filter(s -> s.getQuestion().getId().equals(q.getId()) && s.isCorrect())
+                        .findFirst()
+                        .orElse(null);
+
+                if (correctSub != null) {
+                    double qScore = calculateQuestionScore(q, correctSub, contest);
+                    totalScore += qScore;
+
+                    qStatuses.add(LeaderboardEntryDto.QuestionStatusDto.builder()
+                            .questionId(q.getId())
+                            .correct(true)
+                            .score(qScore)
+                            .wrongCount(correctSub.getWrongCount())
+                            .submittedAt(correctSub.getSubmittedAt())
+                            .build());
+                } else {
+                    // Try to find if there was a wrong attempt to show status in UI
+                    Submission wrongSub = userSubs.stream()
+                            .filter(s -> s.getQuestion().getId().equals(q.getId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (wrongSub != null) {
+                        qStatuses.add(LeaderboardEntryDto.QuestionStatusDto.builder()
+                                .questionId(q.getId())
+                                .correct(false)
+                                .score(0.0)
+                                .wrongCount(wrongSub.getWrongCount())
+                                .submittedAt(wrongSub.getSubmittedAt())
+                                .build());
+                    } else {
+                        qStatuses.add(null); // Not even attempted
+                    }
+                }
+            }
+
             entries.add(LeaderboardEntryDto.builder()
-                    .rank(rank++)
                     .userId(userId)
                     .username(user.getUsername())
                     .fullName(user.getFullName())
                     .profileImageUrl(user.getProfileImageUrl())
-                    .correctCount((int) correctCount)
-                    .totalQuestions(total)
-                    .lastSubmissionTime(lastTime)
+                    .totalScore(totalScore)
+                    .totalQuestions(questions.size())
+                    .questionStatuses(qStatuses)
+                    .lastSubmissionTime(getLastSubmissionTime(userSubs))
                     .build());
         }
+
+        // Sort: High score first. If scores equal, earlier lastSubmissionTime wins.
+        entries.sort(Comparator.comparingDouble(LeaderboardEntryDto::getTotalScore).reversed()
+                .thenComparing(LeaderboardEntryDto::getLastSubmissionTime,
+                        Comparator.nullsLast(Comparator.naturalOrder())));
+
+        for (int i = 0; i < entries.size(); i++) {
+            entries.get(i).setRank(i + 1);
+        }
+
         return entries;
+    }
+
+    private double calculateQuestionScore(Question q, Submission sub, Contest contest) {
+        double basePoints = q.getPoints() != null ? q.getPoints() : 0.0;
+        if (basePoints == 0) return 0.0;
+
+        // 1. Time Penalty (Unitary Method)
+        long secondsUsed = Duration.between(contest.getContestStart(), sub.getSubmittedAt()).getSeconds();
+        double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0; // default 1hr if null
+
+        // Penalty = (Points * 0.5) * (Used / Limit). Cap used time to timeLimit.
+        double timePenalty = (basePoints * 0.5) * (Math.min(secondsUsed, timeLimit) / timeLimit);
+
+        // 2. Wrong Attempt Penalty (2% per wrong count)
+        double wrongPenalty = basePoints * 0.02 * (sub.getWrongCount() != null ? sub.getWrongCount() : 0);
+
+        double finalScore = basePoints - timePenalty - wrongPenalty;
+        return Math.max(0.0, finalScore);
+    }
+
+    private LocalDateTime getLastSubmissionTime(List<Submission> userSubs) {
+        return userSubs.stream()
+                .filter(Submission::isCorrect)
+                .map(Submission::getSubmittedAt)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
     }
 }
