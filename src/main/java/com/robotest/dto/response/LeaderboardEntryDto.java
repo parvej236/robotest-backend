@@ -53,5 +53,9 @@ public class LeaderboardEntryDto {
 
         private Integer wrongCount;
         private LocalDateTime submittedAt;
+
+        // New fields
+        private Long timeTakenSeconds;
+        private Double penalty;
     }
 }

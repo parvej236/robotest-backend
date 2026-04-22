@@ -28,4 +28,9 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     boolean existsByContest_IdAndUser_Email(Long contestId, String email);
 
     List<Submission> findByContestId(Long contestId);
+
+    @jakarta.transaction.Transactional
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Submission s WHERE s.contest.id = :contestId")
+    void deleteByContestId(@org.springframework.data.repository.query.Param("contestId") Long contestId);
 }

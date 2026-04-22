@@ -15,4 +15,9 @@ public interface ResultRepository extends JpaRepository<Result, Long> {
 
     @EntityGraph(attributePaths = {"user", "contest"})
     List<Result> findByUserId(Long userId);
+
+    @jakarta.transaction.Transactional
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Result r WHERE r.contest.id = :contestId")
+    void deleteByContestId(@org.springframework.data.repository.query.Param("contestId") Long contestId);
 }

@@ -35,8 +35,11 @@ public class SubmissionService {
         if (contest.getStatus() != ContestStatus.RUNNING)
             throw AppException.badRequest("Contest is not currently running");
 
-        if (!registrationRepository.existsByUserIdAndContestId(user.getId(), contestId))
-            throw AppException.forbidden("You are not registered for this contest");
+        Registration registration = registrationRepository.findByUserIdAndContestId(user.getId(), contestId)
+                .orElseThrow(() -> AppException.forbidden("You are not registered for this contest"));
+
+        if (registration.isSubmissionComplete())
+            throw AppException.badRequest("You have already completed this contest.");
 
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> AppException.notFound("Question not found"));
@@ -96,6 +99,17 @@ public class SubmissionService {
     }
 
     public boolean hasUserSubmitted(Long contestId, String email) {
-        return submissionRepository.existsByContest_IdAndUser_Email(contestId, email);
+        User user = userService.findByEmail(email);
+        Registration reg = registrationRepository.findByUserIdAndContestId(user.getId(), contestId).orElse(null);
+        return reg != null && reg.isSubmissionComplete();
+    }
+
+    @Transactional
+    public void completeContest(Long contestId, String email) {
+        User user = userService.findByEmail(email);
+        Registration reg = registrationRepository.findByUserIdAndContestId(user.getId(), contestId)
+                .orElseThrow(() -> AppException.badRequest("You are not registered for this contest"));
+        reg.setSubmissionComplete(true);
+        registrationRepository.save(reg);
     }
 }

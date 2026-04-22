@@ -64,7 +64,17 @@ public class LeaderboardService {
                         .orElse(null);
 
                 if (correctSub != null) {
-                    double qScore = calculateQuestionScore(q, correctSub, contest);
+                    double basePoints = q.getPoints() != null ? q.getPoints() : 0.0;
+                    LocalDateTime startTime = correctSub.getQuestionStartedAt() != null ? correctSub.getQuestionStartedAt() : contest.getContestStart();
+                    long secondsUsed = Duration.between(startTime, correctSub.getSubmittedAt()).getSeconds();
+                    secondsUsed = Math.max(0, secondsUsed);
+
+                    double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0;
+                    double timePenalty = (basePoints * 0.5) * (Math.min(secondsUsed, timeLimit) / timeLimit);
+                    double wrongPenalty = basePoints * 0.02 * (correctSub.getWrongCount() != null ? correctSub.getWrongCount() : 0);
+                    double totalPenalty = timePenalty + wrongPenalty;
+
+                    double qScore = Math.max(0.0, basePoints - totalPenalty);
                     totalScore += qScore;
 
                     qStatuses.add(LeaderboardEntryDto.QuestionStatusDto.builder()
@@ -73,6 +83,8 @@ public class LeaderboardService {
                             .score(qScore)
                             .wrongCount(correctSub.getWrongCount())
                             .submittedAt(correctSub.getSubmittedAt())
+                            .timeTakenSeconds(secondsUsed)
+                            .penalty(totalPenalty)
                             .build());
                 } else {
                     // Try to find if there was a wrong attempt to show status in UI

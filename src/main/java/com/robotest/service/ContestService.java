@@ -11,6 +11,8 @@ import com.robotest.exception.AppException;
 import com.robotest.repository.ContestRepository;
 import com.robotest.repository.QuestionRepository;
 import com.robotest.repository.RegistrationRepository;
+import com.robotest.repository.ResultRepository;
+import com.robotest.repository.SubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class ContestService {
     private final QuestionRepository     questionRepository;
     private final UserService            userService;
     private final EmailService           emailService;
+    private final SubmissionRepository   submissionRepository;
+    private final ResultRepository       resultRepository;
 
     // ── GET ALL ───────────────────────────────────────────────
     public ApiResponse<List<ContestDto>> getAllContests() {
@@ -105,6 +109,8 @@ public class ContestService {
     // ── DELETE ────────────────────────────────────────────────
     @Transactional
     public ApiResponse<String> deleteContest(Long id) {
+        submissionRepository.deleteByContestId(id);
+        resultRepository.deleteByContestId(id);
         contestRepository.delete(findById(id));
         log.info("Contest deleted: {}", id);
         return ApiResponse.success("Contest deleted");

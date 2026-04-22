@@ -33,6 +33,14 @@ public class SubmissionController {
                 ));
     }
 
+    @PostMapping("/contest/{contestId}/complete")
+    public ResponseEntity<ApiResponse<String>> completeContest(
+            @PathVariable Long contestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        submissionService.completeContest(contestId, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Contest marked as completed."));
+    }
+
     // ─────────────────────────────────────────────
     // Check if user already submitted (IMPORTANT)
     // ─────────────────────────────────────────────
