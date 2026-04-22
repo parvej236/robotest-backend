@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -26,7 +27,7 @@ public class SubmissionService {
     private final UserService             userService;
 
     @Transactional
-    public ApiResponse<String> submitSingleAnswer(Long contestId, String email, Long questionId, String answer) {
+    public ApiResponse<String> submitSingleAnswer(Long contestId, String email, Long questionId, String answer, LocalDateTime questionStartedAt) {
         User user = userService.findByEmail(email);
         Contest contest = contestService.findById(contestId);
 
@@ -58,6 +59,7 @@ public class SubmissionService {
                     .submittedAnswer(answer)
                     .correct(correct)
                     .wrongCount(correct ? 0 : 1)
+                    .questionStartedAt(questionStartedAt)
                     .build();
         } else {
             // Update existing record

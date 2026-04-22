@@ -2,7 +2,6 @@ package com.robotest.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -36,4 +35,6 @@ public class Submission {
 
     @UpdateTimestamp
     private LocalDateTime submittedAt;
+
+    private LocalDateTime questionStartedAt;
 }

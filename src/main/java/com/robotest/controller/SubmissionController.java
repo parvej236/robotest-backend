@@ -28,7 +28,8 @@ public class SubmissionController {
                         contestId,
                         userDetails.getUsername(),
                         questionId,
-                        request.getAnswer()
+                        request.getAnswer(),
+                        request.getQuestionStartedAt()
                 ));
     }
 

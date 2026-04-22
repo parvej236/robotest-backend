@@ -124,7 +124,10 @@ public class LeaderboardService {
         if (basePoints == 0) return 0.0;
 
         // 1. Time Penalty (Unitary Method)
-        long secondsUsed = Duration.between(contest.getContestStart(), sub.getSubmittedAt()).getSeconds();
+        LocalDateTime startTime = sub.getQuestionStartedAt() != null ? sub.getQuestionStartedAt() : contest.getContestStart();
+        long secondsUsed = Duration.between(startTime, sub.getSubmittedAt()).getSeconds();
+        secondsUsed = Math.max(0, secondsUsed); // Ensure we don't get negative time
+        
         double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0; // default 1hr if null
 
         // Penalty = (Points * 0.5) * (Used / Limit). Cap used time to timeLimit.
