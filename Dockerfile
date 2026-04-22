@@ -37,5 +37,6 @@ EXPOSE 8080
 # Pass Spring profile and ensure uploads dir is writable
 ENTRYPOINT ["java", \
   "-Djava.security.egd=file:/dev/./urandom", \
+  "-Djava.net.preferIPv4Stack=true", \
   "-Dspring.profiles.active=prod", \
   "-jar", "app.jar"]

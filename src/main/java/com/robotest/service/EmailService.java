@@ -95,7 +95,7 @@ public class EmailService {
             mailSender.send(msg);
             log.info("Email sent → [{}] subject: {}", to, subject);
         } catch (Exception e) {
-            log.error("Email failed → [{}]: {}", to, e.getMessage());
+            log.error("Email failed → [{}]: {}", to, e.getMessage(), e);
         }
     }
 
