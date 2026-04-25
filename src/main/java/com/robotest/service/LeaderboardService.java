@@ -84,7 +84,10 @@ public class LeaderboardService {
                             .wrongCount(correctSub.getWrongCount())
                             .submittedAt(correctSub.getSubmittedAt())
                             .timeTakenSeconds(secondsUsed)
+                            .timeLimits(timeLimit)
                             .penalty(totalPenalty)
+                            .timePenalty(totalPenalty)
+                            .wrongPenalty(wrongPenalty)
                             .build());
                 } else {
                     // Try to find if there was a wrong attempt to show status in UI
@@ -94,11 +97,19 @@ public class LeaderboardService {
                             .orElse(null);
 
                     if (wrongSub != null) {
+                        double basePoints = q.getPoints() != null ? q.getPoints() : 0.0;
+                        double wrongPenalty = basePoints * 0.02 * (wrongSub.getWrongCount() != null ? wrongSub.getWrongCount() : 0);
+
+
+                        double qScore = - wrongPenalty;
+                        totalScore += qScore;
+
                         qStatuses.add(LeaderboardEntryDto.QuestionStatusDto.builder()
                                 .questionId(q.getId())
                                 .correct(false)
-                                .score(0.0)
+                                .score(qScore)
                                 .wrongCount(wrongSub.getWrongCount())
+                                .wrongPenalty(wrongPenalty)
                                 .submittedAt(wrongSub.getSubmittedAt())
                                 .build());
                     } else {

@@ -56,6 +56,10 @@ public class LeaderboardEntryDto {
 
         // New fields
         private Long timeTakenSeconds;
+        private Double timeLimits;
         private Double penalty;
+
+        private Double timePenalty;
+        private Double wrongPenalty;
     }
 }
