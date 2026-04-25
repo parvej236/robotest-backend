@@ -63,11 +63,13 @@ public class SubmissionService {
                     .correct(correct)
                     .wrongCount(correct ? 0 : 1)
                     .questionStartedAt(questionStartedAt)
+                    .submittedAt(LocalDateTime.now())
                     .build();
         } else {
             // Update existing record
             existing.setSubmittedAnswer(answer);
             existing.setCorrect(correct);
+            existing.setSubmittedAt(LocalDateTime.now());
             if (!correct) {
                 // Increment wrong count if the answer is incorrect
                 existing.setWrongCount((existing.getWrongCount() == null ? 0 : existing.getWrongCount()) + 1);
