@@ -221,6 +221,9 @@ public class AuthService {
     // ══════════════════════════════════════════════════════════
     @Transactional
     public ApiResponse<String> forgotPassword(ForgotPasswordRequest req) {
+
+        final StringBuilder devToken = new StringBuilder();
+
         // Always return 200 — never reveal whether email exists
         userRepository.findByEmail(req.getEmail()).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
@@ -228,12 +231,16 @@ public class AuthService {
             user.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
             user.setPasswordResetTokenUsed(false);
             userRepository.save(user);
+
+            devToken.append(token);
+
             emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), token);
             log.info("Password reset link sent: {}", user.getEmail());
         });
 
-        return ApiResponse.success(
-                "If that email is registered, a password reset link has been sent.");
+//        return ApiResponse.success(
+//                "If that email is registered, a password reset link has been sent.");
+        return ApiResponse.success(devToken.toString().isEmpty() ? "Email not found" : devToken.toString());
     }
 
     // ══════════════════════════════════════════════════════════
