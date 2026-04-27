@@ -2,8 +2,7 @@ package com.robotest.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,8 +32,7 @@ public class Submission {
     @Builder.Default
     private boolean correct = false;
 
-    @UpdateTimestamp
-    private LocalDateTime submittedAt;
+    private Instant submittedAt;
 
     private LocalDateTime questionStartedAt;
 }

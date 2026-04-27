@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,7 +68,7 @@ public class LeaderboardService {
                 if (correctSub != null) {
                     double basePoints = q.getPoints() != null ? q.getPoints() : 0.0;
                     LocalDateTime startTime = correctSub.getQuestionStartedAt() != null ? correctSub.getQuestionStartedAt() : contest.getContestStart();
-                    long secondsUsed = Duration.between(startTime, correctSub.getSubmittedAt()).getSeconds();
+                    long secondsUsed = Duration.between(startTime.toInstant(ZoneOffset.UTC), correctSub.getSubmittedAt()).getSeconds();
                     secondsUsed = Math.max(0, secondsUsed);
 
                     double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0;
@@ -148,7 +150,7 @@ public class LeaderboardService {
 
         // 1. Time Penalty (Unitary Method)
         LocalDateTime startTime = sub.getQuestionStartedAt() != null ? sub.getQuestionStartedAt() : contest.getContestStart();
-        long secondsUsed = Duration.between(startTime, sub.getSubmittedAt()).getSeconds();
+        long secondsUsed = Duration.between(startTime.toInstant(ZoneOffset.UTC), sub.getSubmittedAt()).getSeconds();
         secondsUsed = Math.max(0, secondsUsed); // Ensure we don't get negative time
         
         double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0; // default 1hr if null
@@ -163,11 +165,11 @@ public class LeaderboardService {
         return Math.max(0.0, finalScore);
     }
 
-    private LocalDateTime getLastSubmissionTime(List<Submission> userSubs) {
+    private Instant getLastSubmissionTime(List<Submission> userSubs) {
         return userSubs.stream()
                 .filter(Submission::isCorrect)
                 .map(Submission::getSubmittedAt)
-                .max(LocalDateTime::compareTo)
+                .max(Comparator.naturalOrder())
                 .orElse(null);
     }
 

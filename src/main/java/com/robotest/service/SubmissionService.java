@@ -12,8 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Map;
 
 @Service
@@ -64,13 +64,13 @@ public class SubmissionService {
                     .correct(correct)
                     .wrongCount(correct ? 0 : 1)
                     .questionStartedAt(questionStartedAt)
-                    .submittedAt(LocalDateTime.now(ZoneId.of("Asia/Dhaka")))
+                    .submittedAt(Instant.now())
                     .build();
         } else {
             // Update existing record
             existing.setSubmittedAnswer(answer);
             existing.setCorrect(correct);
-            existing.setSubmittedAt(LocalDateTime.now(ZoneId.of("Asia/Dhaka")));
+            existing.setSubmittedAt(Instant.now());
             if (!correct) {
                 // Increment wrong count if the answer is incorrect
                 existing.setWrongCount((existing.getWrongCount() == null ? 0 : existing.getWrongCount()) + 1);

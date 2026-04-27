@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -31,7 +31,7 @@ public class LeaderboardEntryDto {
      * The timestamp of the very last correct submission.
      * Used as a tie-breaker in ranking.
      */
-    private LocalDateTime lastSubmissionTime;
+    private Instant lastSubmissionTime;
 
     /**
      * Question-wise breakdown for the leaderboard grid.
@@ -52,7 +52,7 @@ public class LeaderboardEntryDto {
         private double score;
 
         private Integer wrongCount;
-        private LocalDateTime submittedAt;
+        private Instant submittedAt;
 
         // New fields
         private Long timeTakenSeconds;
