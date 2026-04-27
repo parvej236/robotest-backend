@@ -3,7 +3,6 @@ package com.robotest.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "submissions")
@@ -34,5 +33,5 @@ public class Submission {
 
     private Instant submittedAt;
 
-    private LocalDateTime questionStartedAt;
+    private Instant questionStartedAt;
 }

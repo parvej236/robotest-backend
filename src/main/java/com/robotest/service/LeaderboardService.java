@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -67,8 +66,10 @@ public class LeaderboardService {
 
                 if (correctSub != null) {
                     double basePoints = q.getPoints() != null ? q.getPoints() : 0.0;
-                    LocalDateTime startTime = correctSub.getQuestionStartedAt() != null ? correctSub.getQuestionStartedAt() : contest.getContestStart();
-                    long secondsUsed = Duration.between(startTime.toInstant(ZoneOffset.UTC), correctSub.getSubmittedAt()).getSeconds();
+                    Instant startTime = correctSub.getQuestionStartedAt() != null
+                            ? correctSub.getQuestionStartedAt()
+                            : contest.getContestStart().toInstant(ZoneOffset.UTC);
+                    long secondsUsed = Duration.between(startTime, correctSub.getSubmittedAt()).getSeconds();
                     secondsUsed = Math.max(0, secondsUsed);
 
                     double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0;
@@ -149,8 +150,10 @@ public class LeaderboardService {
         if (basePoints == 0) return 0.0;
 
         // 1. Time Penalty (Unitary Method)
-        LocalDateTime startTime = sub.getQuestionStartedAt() != null ? sub.getQuestionStartedAt() : contest.getContestStart();
-        long secondsUsed = Duration.between(startTime.toInstant(ZoneOffset.UTC), sub.getSubmittedAt()).getSeconds();
+        Instant startTime = sub.getQuestionStartedAt() != null
+                ? sub.getQuestionStartedAt()
+                : contest.getContestStart().toInstant(ZoneOffset.UTC);
+        long secondsUsed = Duration.between(startTime, sub.getSubmittedAt()).getSeconds();
         secondsUsed = Math.max(0, secondsUsed); // Ensure we don't get negative time
         
         double timeLimit = q.getTimeLimit() != null ? q.getTimeLimit() : 3600.0; // default 1hr if null

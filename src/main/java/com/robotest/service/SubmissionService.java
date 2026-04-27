@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -28,7 +27,7 @@ public class SubmissionService {
     private final UserService             userService;
 
     @Transactional
-    public ApiResponse<String> submitSingleAnswer(Long contestId, String email, Long questionId, String answer, LocalDateTime questionStartedAt) {
+    public ApiResponse<String> submitSingleAnswer(Long contestId, String email, Long questionId, String answer, Instant questionStartedAt) {
         User user = userService.findByEmail(email);
         Contest contest = contestService.findById(contestId);
 
