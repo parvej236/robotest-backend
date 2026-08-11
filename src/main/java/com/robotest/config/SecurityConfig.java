@@ -1,6 +1,7 @@
 package com.robotest.config;
 
 import com.robotest.security.JwtAuthenticationFilter;
+import com.robotest.security.OAuth2AuthenticationSuccessHandler;
 import com.robotest.security.UserDetailsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl  userDetailsServiceImpl;
+    private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Explicit constructor (NOT @RequiredArgsConstructor) so that
@@ -46,9 +49,13 @@ public class SecurityConfig {
      * as a second constructor parameter by Lombok — avoiding conflicts.
      */
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
-                          UserDetailsServiceImpl  userDetailsServiceImpl) {
+                          UserDetailsServiceImpl  userDetailsServiceImpl,
+                          OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler,
+                          PasswordEncoder passwordEncoder) {
         this.jwtAuthFilter           = jwtAuthFilter;
         this.userDetailsServiceImpl  = userDetailsServiceImpl;
+        this.oAuth2SuccessHandler    = oAuth2SuccessHandler;
+        this.passwordEncoder         = passwordEncoder;
     }
 
     /**
@@ -72,15 +79,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/verify-email").permitAll()
                 .requestMatchers("/api/auth/resend-verification").permitAll()
+                .requestMatchers("/api/auth/check-username").permitAll()
+                .requestMatchers("/api/auth/check-email").permitAll()
                 .requestMatchers("/api/auth/forgot-password").permitAll()
                 .requestMatchers("/api/auth/reset-password").permitAll()
                 .requestMatchers("/api/auth/refresh-token").permitAll()
                 .requestMatchers("/api/auth/validate-token").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests/active").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests/latest").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/contests/{id:[0-9]+}").permitAll()
+                .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/contests/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/leaderboard/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/rulebook").permitAll()
+                    .requestMatchers("/api/submissions/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers("/api/users/me").authenticated()        // own profile — any user
                     .requestMatchers("/api/users/me/avatar").authenticated()  // own avatar — any user
@@ -89,6 +98,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oAuth2SuccessHandler)
+            )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -100,7 +112,7 @@ public class SecurityConfig {
         DaoAuthenticationProvider p = new DaoAuthenticationProvider();
         // Calls the @Bean above — returns UserDetailsService interface; no cast error
         p.setUserDetailsService(userDetailsService());
-        p.setPasswordEncoder(passwordEncoder());
+        p.setPasswordEncoder(passwordEncoder);
         return p;
     }
 
@@ -111,19 +123,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
-    }
-
-    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(
                 frontendUrl,
+                "http://localhost:5173",
+                "http://localhost:5173/",
                 "http://localhost:3000",
                 "http://192.168.5.7:5173",
                 "http://192.168.5.7:3000"
-
         ));
         cfg.setAllowedMethods(Arrays.asList("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));

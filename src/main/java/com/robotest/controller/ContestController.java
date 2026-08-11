@@ -86,6 +86,14 @@ public class ContestController {
         return ResponseEntity.ok(contestService.createContest(request));
     }
 
+    @PostMapping("/{contestId}/send-announcement")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> sendContestAnnouncement(
+            @PathVariable Long contestId) {
+        contestService.sendContestAnnouncementEmail(contestId);
+        return ResponseEntity.ok(ApiResponse.success("Emails sent successfully"));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ContestDto>> update(

@@ -54,6 +54,7 @@ public class QuestionService {
                 .contest(contest)
                 .description(req.getDescription())
                 .type(req.getType())
+                .timeLimit(req.getTimeLimit())
                 .correctAnswer(req.getCorrectAnswer())
                 .errorPercentage(req.getErrorPercentage())
                 .customAnswerKey(req.getCustomAnswerKey())
@@ -62,7 +63,7 @@ public class QuestionService {
                 .build();
 
         if (image != null && !image.isEmpty())
-            q.setImageUrl(fileStorageService.storeProfileImage(image, "questions/images"));
+            q.setImageUrl(fileStorageService.storeFile(image, "questions/images"));
         if (video != null && !video.isEmpty())
             q.setVideoUrl(fileStorageService.storeFile(video, "questions/videos"));
 
@@ -79,6 +80,7 @@ public class QuestionService {
 
         q.setDescription(req.getDescription());
         q.setType(req.getType());
+        q.setTimeLimit(req.getTimeLimit());
         q.setCorrectAnswer(req.getCorrectAnswer());
         q.setErrorPercentage(req.getErrorPercentage());
         q.setCustomAnswerKey(req.getCustomAnswerKey());
@@ -87,7 +89,7 @@ public class QuestionService {
 
         if (image != null && !image.isEmpty()) {
             if (q.getImageUrl() != null) fileStorageService.delete(q.getImageUrl());
-            q.setImageUrl(fileStorageService.storeProfileImage(image, "questions/images"));
+            q.setImageUrl(fileStorageService.storeFile(image, "questions/images"));
         }
         if (video != null && !video.isEmpty()) {
             if (q.getVideoUrl() != null) fileStorageService.delete(q.getVideoUrl());
@@ -126,6 +128,7 @@ public class QuestionService {
                 .imageUrl(q.getImageUrl())
                 .videoUrl(q.getVideoUrl())
                 .type(q.getType())
+                .timeLimit(q.getTimeLimit())
                 .correctAnswer(q.getCorrectAnswer())
                 .errorPercentage(q.getErrorPercentage())
                 .customAnswerKey(q.getCustomAnswerKey())

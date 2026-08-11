@@ -14,6 +14,7 @@ public class QuestionDto {
     private String       imageUrl;
     private String       videoUrl;
     private QuestionType type;
+    private Integer      timeLimit; // Seconds
     private Double       correctAnswer;
     private Double       errorPercentage;
     private String       customAnswerKey;

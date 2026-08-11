@@ -69,8 +69,8 @@ public class AuthService {
                 .username(req.getUsername())
                 .email(req.getEmail())
                 .password(passwordEncoder.encode(req.getPassword()))
-                .enabled(false)
-                .emailVerified(false)
+                .enabled(true)
+                .emailVerified(true)
                 .emailVerificationToken(token)
                 .emailVerificationTokenExpiry(LocalDateTime.now().plusHours(24))
                 .roles(Set.of(userRole))
@@ -221,6 +221,9 @@ public class AuthService {
     // ══════════════════════════════════════════════════════════
     @Transactional
     public ApiResponse<String> forgotPassword(ForgotPasswordRequest req) {
+
+        final StringBuilder devToken = new StringBuilder();
+
         // Always return 200 — never reveal whether email exists
         userRepository.findByEmail(req.getEmail()).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
@@ -228,12 +231,16 @@ public class AuthService {
             user.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
             user.setPasswordResetTokenUsed(false);
             userRepository.save(user);
+
+            devToken.append(token);
+
             emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), token);
             log.info("Password reset link sent: {}", user.getEmail());
         });
 
-        return ApiResponse.success(
-                "If that email is registered, a password reset link has been sent.");
+//        return ApiResponse.success(
+//                "If that email is registered, a password reset link has been sent.");
+        return ApiResponse.success(devToken.toString().isEmpty() ? "Email not found" : devToken.toString());
     }
 
     // ══════════════════════════════════════════════════════════
@@ -347,6 +354,7 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .profileImageUrl(user.getProfileImageUrl())
                 .enabled(user.isEnabled())
                 .emailVerified(user.isEmailVerified())
                 .roles(user.getRoles().stream()
@@ -354,5 +362,13 @@ public class AuthService {
                         .collect(Collectors.toList()))
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    public Boolean existsByUsername(String username) {
+        return userRepository.findByUsername(username).isPresent();
+    }
+
+    public Boolean existsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
     }
 }

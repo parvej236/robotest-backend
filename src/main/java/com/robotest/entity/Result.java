@@ -3,8 +3,8 @@ package com.robotest.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Entity
 @Table(name = "results",
@@ -24,10 +24,9 @@ public class Result {
     @JoinColumn(name = "contest_id", nullable = false)
     private Contest contest;
 
-    private Integer correctCount;
-    private Integer totalQuestions;
+    private Double totalScore;     // Sum of all question scores
+    private Integer solvedCount;   // Count of correct answers
     private Integer rank;
-    private LocalDateTime lastSubmissionTime;
 
     @CreationTimestamp
     private LocalDateTime calculatedAt;

@@ -18,13 +18,15 @@ public class FileStorageService {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    private static final long MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final long MAX_SIZE = 500 * 1024 * 1024; // 500 MB
     private static final List<String> ALLOWED_IMAGE_TYPES =
             List.of("image/jpeg", "image/png", "image/webp", "image/gif");
 
     // ── Store any file in a subfolder ─────────────────────────
     public String storeFile(MultipartFile file, String subfolder) {
         validateNotEmpty(file);
+        if (file.getSize() > MAX_SIZE)
+            throw AppException.badRequest("File exceeds 500 MB limit");
         return store(file, subfolder);
     }
 
@@ -32,7 +34,7 @@ public class FileStorageService {
     public String storeProfileImage(MultipartFile file, String subfolder) {
         validateNotEmpty(file);
         if (file.getSize() > MAX_SIZE)
-            throw AppException.badRequest("File exceeds 5 MB limit");
+            throw AppException.badRequest("File exceeds 500 MB limit");
         if (!ALLOWED_IMAGE_TYPES.contains(file.getContentType()))
             throw AppException.badRequest("Allowed image types: JPEG, PNG, WebP, GIF");
         return store(file, subfolder);

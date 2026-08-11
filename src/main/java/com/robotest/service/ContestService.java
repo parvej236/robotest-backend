@@ -11,6 +11,8 @@ import com.robotest.exception.AppException;
 import com.robotest.repository.ContestRepository;
 import com.robotest.repository.QuestionRepository;
 import com.robotest.repository.RegistrationRepository;
+import com.robotest.repository.ResultRepository;
+import com.robotest.repository.SubmissionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class ContestService {
     private final QuestionRepository     questionRepository;
     private final UserService            userService;
     private final EmailService           emailService;
+    private final SubmissionRepository   submissionRepository;
+    private final ResultRepository       resultRepository;
 
     // ── GET ALL ───────────────────────────────────────────────
     public ApiResponse<List<ContestDto>> getAllContests() {
@@ -73,6 +77,17 @@ public class ContestService {
                 .build();
         Contest saved = contestRepository.save(contest);
         log.info("Contest created: {}", saved.getName());
+
+//        List<User> users = userService.findAll();
+//        users.forEach(user -> {
+//            emailService.sendNewContestEmail(
+//                    user.getEmail(),
+//                    user.getFullName(),
+//                    saved.getName(),
+//                    saved.getId().toString()
+//            );
+//        });
+
         return ApiResponse.success("Contest created", toDto(saved));
     }
 
@@ -94,6 +109,8 @@ public class ContestService {
     // ── DELETE ────────────────────────────────────────────────
     @Transactional
     public ApiResponse<String> deleteContest(Long id) {
+        submissionRepository.deleteByContestId(id);
+        resultRepository.deleteByContestId(id);
         contestRepository.delete(findById(id));
         log.info("Contest deleted: {}", id);
         return ApiResponse.success("Contest deleted");
@@ -160,5 +177,23 @@ public class ContestService {
             throw AppException.badRequest("Registration end must be after registration start");
         if (req.getContestEnd().isBefore(req.getContestStart()))
             throw AppException.badRequest("Contest end must be after contest start");
+    }
+
+    @Transactional
+    public void sendContestAnnouncementEmail(Long contestId) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new RuntimeException("Contest not found with id: " + contestId));
+
+        List<User> users = userService.findAll();
+        users.forEach(user -> {
+            emailService.sendNewContestEmail(
+                    user.getEmail(),
+                    user.getFullName(),
+                    contest.getName(),
+                    contest.getId().toString()
+            );
+        });
+
+        log.info("Contest announcement emails sent for contest: {}", contest.getName());
     }
 }

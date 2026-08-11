@@ -26,4 +26,7 @@ public class Registration {
 
     @CreationTimestamp
     private LocalDateTime registeredAt;
+
+    @Column(name = "is_submission_complete", nullable = false)
+    private boolean isSubmissionComplete = false;
 }

@@ -2,7 +2,10 @@ package com.robotest.controller;
 
 import com.robotest.dto.response.ApiResponse;
 import com.robotest.dto.response.LeaderboardEntryDto;
+import com.robotest.dto.response.ResultResponseDto;
 import com.robotest.entity.Result;
+import com.robotest.entity.User;
+import com.robotest.exception.AppException;
 import com.robotest.repository.ResultRepository;
 import com.robotest.service.LeaderboardService;
 import com.robotest.service.UserService;
@@ -29,20 +32,22 @@ public class LeaderboardController {
         return ResponseEntity.ok(leaderboardService.getLeaderboard(contestId));
     }
 
-    @GetMapping("/contest/{contestId}/my-result")
-    public ResponseEntity<ApiResponse<Object>> getMyResult(
-            @PathVariable Long contestId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(
-                leaderboardService.getMyResult(contestId, userDetails.getUsername()));
-    }
+//    @GetMapping("/contest/{contestId}/my-result")
+//    public ResponseEntity<ApiResponse<Result>> getMyResult(
+//            @PathVariable Long contestId,
+//            @AuthenticationPrincipal UserDetails userDetails) {
+//        // Updated service call to return Result entity with question details
+//        return ResponseEntity.ok(leaderboardService.getMyResults(contestId, userDetails.getUsername()));
+//    }
 
-    // NOTE: The generic type below should be List<Result> — replace RESULT with Result when you copy this
-    @GetMapping("/my-results")
-    public ResponseEntity<ApiResponse<List<Result>>> getMyResults(
+    /**
+     * Get all historical results for the authenticated user across all contests.
+     */
+    @GetMapping("/my-history")
+    public ResponseEntity<ApiResponse<List<ResultResponseDto>>> getMyResults(
             @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = userService.findByEmail(userDetails.getUsername()).getId();
-        List<Result> results = resultRepository.findByUserId(userId);
-        return ResponseEntity.ok(ApiResponse.success("Results fetched", results));
+        // Return the DTO list to prevent "no Session" errors
+        List<ResultResponseDto> history = leaderboardService.getMyResults(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("History fetched", history));
     }
 }

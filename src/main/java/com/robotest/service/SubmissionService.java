@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Service
@@ -23,51 +24,70 @@ public class SubmissionService {
     private final QuestionRepository     questionRepository;
     private final RegistrationRepository registrationRepository;
     private final ContestService         contestService;
-    private final UserService            userService;
+    private final UserService             userService;
 
     @Transactional
-    public ApiResponse<String> submitAnswers(Long contestId, String email,
-                                             SubmissionRequest req) {
+    public ApiResponse<String> submitSingleAnswer(Long contestId, String email, Long questionId, String answer, Instant questionStartedAt) {
         User user = userService.findByEmail(email);
         Contest contest = contestService.findById(contestId);
 
+        // 1. Basic Validation
         if (contest.getStatus() != ContestStatus.RUNNING)
             throw AppException.badRequest("Contest is not currently running");
-        if (!registrationRepository.existsByUserIdAndContestId(user.getId(), contestId))
-            throw AppException.forbidden("You are not registered for this contest");
 
-        for (Map.Entry<Long, String> entry : req.getAnswers().entrySet()) {
-            Long   qId    = entry.getKey();
-            String answer = entry.getValue();
+        Registration registration = registrationRepository.findByUserIdAndContestId(user.getId(), contestId)
+                .orElseThrow(() -> AppException.forbidden("You are not registered for this contest"));
 
-            Question question = questionRepository.findById(qId)
-                    .orElseThrow(() -> AppException.notFound("Question not found: " + qId));
+        if (registration.isSubmissionComplete())
+            throw AppException.badRequest("You have already completed this contest.");
 
-            boolean correct = evaluate(question, answer);
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> AppException.notFound("Question not found"));
 
-            // Upsert — allow re-submission, overwrite previous answer
-            submissionRepository.findByUserIdAndQuestionId(user.getId(), qId)
-                    .ifPresentOrElse(existing -> {
-                        existing.setSubmittedAnswer(answer);
-                        existing.setCorrect(correct);
-                        submissionRepository.save(existing);
-                    }, () -> submissionRepository.save(Submission.builder()
-                            .user(user)
-                            .contest(contest)
-                            .question(question)
-                            .submittedAnswer(answer)
-                            .correct(correct)
-                            .build()));
+        // 2. Check if already answered correctly
+        Submission existing = submissionRepository.findByUserIdAndQuestionId(user.getId(), questionId).orElse(null);
+        if (existing != null && existing.isCorrect()) {
+            return ApiResponse.success("Question already solved correctly");
         }
 
-        log.info("Answers submitted by {} for contest {}", email, contestId);
-        return ApiResponse.success("Answers submitted successfully");
+        // 3. Evaluate the answer
+        boolean correct = evaluate(question, answer);
+
+        if (existing == null) {
+            // New submission record
+            existing = Submission.builder()
+                    .user(user)
+                    .contest(contest)
+                    .question(question)
+                    .submittedAnswer(answer)
+                    .correct(correct)
+                    .wrongCount(correct ? 0 : 1)
+                    .questionStartedAt(questionStartedAt)
+                    .submittedAt(Instant.now())
+                    .build();
+        } else {
+            // Update existing record
+            existing.setSubmittedAnswer(answer);
+            existing.setCorrect(correct);
+            existing.setSubmittedAt(Instant.now());
+            if (!correct) {
+                // Increment wrong count if the answer is incorrect
+                existing.setWrongCount((existing.getWrongCount() == null ? 0 : existing.getWrongCount()) + 1);
+            }
+        }
+
+        submissionRepository.save(existing);
+
+        if (correct) {
+            return ApiResponse.success("Correct! Moving to next question...");
+        } else {
+            // Throw an exception or return error to trigger the "Try Again" message in frontend
+            return ApiResponse.error("Wrong answer, the value is not within the tolerance range, please try again.");
+        }
     }
 
-    // ── Answer evaluation ─────────────────────────────────────
     private boolean evaluate(Question q, String answer) {
         if (answer == null || answer.isBlank()) return false;
-
         if (q.getType() == QuestionType.NUMERIC_MCQ) {
             try {
                 double submitted = Double.parseDouble(answer.trim());
@@ -75,13 +95,23 @@ public class SubmissionService {
                 double tolerance = q.getErrorPercentage() != null
                         ? Math.abs(correct) * q.getErrorPercentage() / 100.0 : 0;
                 return Math.abs(submitted - correct) <= tolerance;
-            } catch (NumberFormatException e) {
-                return false;
-            }
+            } catch (NumberFormatException e) { return false; }
         }
+        return q.getCustomAnswerKey() != null && q.getCustomAnswerKey().equalsIgnoreCase(answer.trim());
+    }
 
-        // CUSTOM — case-insensitive exact match
-        return q.getCustomAnswerKey() != null
-                && q.getCustomAnswerKey().equalsIgnoreCase(answer.trim());
+    public boolean hasUserSubmitted(Long contestId, String email) {
+        User user = userService.findByEmail(email);
+        Registration reg = registrationRepository.findByUserIdAndContestId(user.getId(), contestId).orElse(null);
+        return reg != null && reg.isSubmissionComplete();
+    }
+
+    @Transactional
+    public void completeContest(Long contestId, String email) {
+        User user = userService.findByEmail(email);
+        Registration reg = registrationRepository.findByUserIdAndContestId(user.getId(), contestId)
+                .orElseThrow(() -> AppException.badRequest("You are not registered for this contest"));
+        reg.setSubmissionComplete(true);
+        registrationRepository.save(reg);
     }
 }

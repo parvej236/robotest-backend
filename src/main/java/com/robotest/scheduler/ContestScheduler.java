@@ -21,7 +21,7 @@ public class ContestScheduler {
     private final LeaderboardService leaderboardService;
 
     /**
-     * Runs every 60 seconds.
+     * Runs every 5 seconds.
      *
      * Correct state machine:
      *
@@ -40,7 +40,7 @@ public class ContestScheduler {
      * contests to flip back and forth every minute. A contest should never
      * go backwards in status.
      */
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 5_000)
     public void updateContestStatuses() {
         LocalDateTime now = LocalDateTime.now();
 

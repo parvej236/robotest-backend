@@ -26,6 +26,8 @@ public class Question {
     @Enumerated(EnumType.STRING)
     private QuestionType type;
 
+    private Integer timeLimit; // Store as total seconds
+
     // For NUMERIC_MCQ: correct weight in grams
     private Double correctAnswer;
 
