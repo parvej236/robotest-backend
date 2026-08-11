@@ -76,4 +76,4 @@ docker-compose.override.yml
 
 
 .env
-.env.*
+.env.*.env
