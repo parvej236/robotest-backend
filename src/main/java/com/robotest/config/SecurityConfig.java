@@ -91,8 +91,16 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/rulebook").permitAll()
                     .requestMatchers("/api/submissions/**").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
-                    .requestMatchers("/api/users/me").authenticated()        // own profile — any user
-                    .requestMatchers("/api/users/me/avatar").authenticated()  // own avatar — any user
+                    // ── Static frontend assets & SPA routes ──
+                    .requestMatchers("/", "/index.html").permitAll()
+                    .requestMatchers("/assets/**", "/favicon.ico", "/favicon.svg").permitAll()
+                    .requestMatchers(
+                        "/login", "/register", "/verify-email", "/reset-password",
+                        "/forgot-password", "/about", "/rules", "/contests",
+                        "/leaderboard"
+                    ).permitAll()
+                    .requestMatchers("/api/users/me").authenticated()
+                    .requestMatchers("/api/users/me/avatar").authenticated()
                     .requestMatchers("/api/users/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/api/rulebook").hasRole("ADMIN")
                 .anyRequest().authenticated()
