@@ -354,6 +354,7 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .profileImageUrl(user.getProfileImageUrl())
                 .enabled(user.isEnabled())
                 .emailVerified(user.isEmailVerified())
                 .roles(user.getRoles().stream()
