@@ -74,3 +74,5 @@ coverage/
 # --- Docker / misc ---
 docker-compose.override.yml
 
+.env
+
