@@ -1,164 +1,114 @@
-# Robotest Auth Backend
+# RoboTest Full-Stack Platform — Universal Deployment Guide
 
-Fully runnable Spring Boot 3.2 authentication backend.
+Full-stack Spring Boot 3.2 + Vue 3 platform with zero-configuration automated background deployment, single `.env` synchronization, and Cloudflare Tunnel integration.
 
-## Prerequisites
-- Java 17+
-- Maven 3.8+
-- PostgreSQL 14+
-- Gmail App Password (for email)
+---
 
-## Setup
+## 🚀 Master 1-Click Setup & Server Start
 
-### 1 — Create the database
-```bash
-createdb robotest_db
-# Schema is auto-applied by spring.jpa.hibernate.ddl-auto=update on first run
+You can run the entire platform (Frontend, Backend, and Cloudflare Tunnel) in the background on any machine with a single command. 
+
+Place `run-all.sh` in your main workspace folder (outside the repositories):
+
+```text
+my-workspace/
+├── run-all.sh        <-- Master runner script
+├── stop-all.sh       <-- Master stop script
+├── robotest-backend/ <-- Backend Git repository
+└── robotest-frontend/ <-- Frontend Git repository
 ```
 
-### 2 — Configure application.properties
-```properties
-# Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/robotest_db
-spring.datasource.username=postgres
-spring.datasource.password=YOUR_DB_PASSWORD
-
-# Mail — get App Password at https://myaccount.google.com/apppasswords
-spring.mail.username=your-email@gmail.com
-spring.mail.password=xxxx-xxxx-xxxx-xxxx
+### ⚡ Run Master Command:
+```bash
+./run-all.sh
 ```
 
-### 3 — Run
+*(Optional custom URL / tunnel: `./run-all.sh https://live.rmecad.top rmecad-live`)*
+
+---
+
+### 🛡️ What `run-all.sh` does automatically:
+
+1. **Automatic `.env` Creation:**
+   - `.env` files are **never committed to GitHub** (kept in `.gitignore` for security).
+   - If `.env` is missing, `run-all.sh` automatically creates it safely from `.env.example`.
+2. **Unified URL Synchronization:**
+   - Automatically synchronizes `FRONTEND_URL`, `APP_BASE_URL` (in backend `.env`) and `VITE_API_URL` (in frontend `.env`) to your live domain (`https://live.rmecad.top`).
+3. **Auto Docker Setup:**
+   - Detects Docker/Docker Compose. Automatically installs Docker on Linux if missing.
+4. **Frontend Build & Embed:**
+   - Compiles Vue 3 frontend (`robotest-frontend`) and embeds static build assets directly into `robotest-backend/src/main/resources/static/`.
+5. **Backend Packaging:**
+   - Packages Spring Boot executable JAR (`target/robotest-backend-1.0.0.jar`).
+6. **Persistent Background Execution:**
+   - Launches Spring Boot backend and Cloudflare Tunnel (`rmecad-live`) via `nohup` in the background.
+   - **You can close your terminal and the website stays online!**
+
+---
+
+## 🛠️ Server Management Commands
+
+| Task | Command |
+|------|---------|
+| **Start Everything** | `./run-all.sh` |
+| **Stop Everything** | `./stop-all.sh` |
+| **View Backend Logs** | `tail -f robotest-backend/backend.log` |
+| **View Tunnel Logs** | `tail -f robotest-backend/cloudflared.log` |
+
+---
+
+## 🌐 One-Time Cloudflare Tunnel Setup (`live.rmecad.top`)
+
+To map your domain (`live.rmecad.top`) to your local machine:
+
+1. **Authenticate Cloudflare CLI:**
+   ```bash
+   cloudflared tunnel login
+   ```
+2. **Create Named Tunnel:**
+   ```bash
+   cloudflared tunnel create rmecad-live
+   ```
+3. **Route Subdomain DNS:**
+   ```bash
+   cloudflared tunnel route dns rmecad-live live.rmecad.top
+   ```
+4. **Configure `~/.cloudflared/config.yml`:**
+   ```yaml
+   tunnel: <YOUR-TUNNEL-UUID>
+   credentials-file: /home/<user>/.cloudflared/<YOUR-TUNNEL-UUID>.json
+
+   ingress:
+     - hostname: live.rmecad.top
+       service: http://localhost:8080
+     - service: http_status:404
+   ```
+
+---
+
+## 🔐 Google OAuth2 Setup
+
+Add your domain to [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
+
+* **Authorized JavaScript origins:** `https://live.rmecad.top`
+* **Authorized redirect URIs:** `https://live.rmecad.top/login/oauth2/code/google`
+
+---
+
+## 💻 Local Development Mode (Optional)
+
+To run frontend and backend separately in development mode:
+
+### 1. Backend
 ```bash
+cd robotest-backend
 mvn spring-boot:run
-# Server starts at http://localhost:8080
-# Admin account auto-created: admin@robotest.com / Admin@1234
 ```
+*Backend runs on `http://localhost:8080`*
 
-### 4 — Run tests
+### 2. Frontend
 ```bash
-mvn test
+cd robotest-frontend
+npm run dev
 ```
-
----
-
-## API Reference
-
-All responses follow: `{ success, message, data, timestamp }`
-
-### Public Endpoints
-
-| Method | URL | Body |
-|--------|-----|------|
-| POST | /api/auth/register | `{ fullName, username, email, password, confirmPassword }` |
-| GET  | /api/auth/verify-email?token= | — |
-| POST | /api/auth/resend-verification?email= | — |
-| POST | /api/auth/login | `{ email, password }` |
-| POST | /api/auth/refresh-token | `{ refreshToken }` |
-| POST | /api/auth/forgot-password | `{ email }` |
-| POST | /api/auth/reset-password | `{ token, newPassword, confirmPassword }` |
-| GET  | /api/auth/validate-token?token= | — |
-
-### Protected Endpoints (Bearer token required)
-
-| Method | URL | Body |
-|--------|-----|------|
-| POST | /api/auth/logout | — |
-| POST | /api/auth/change-password | `{ currentPassword, newPassword, confirmPassword }` |
-| GET  | /api/auth/me | — |
-
----
-
-## Example Requests
-
-### Register
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"fullName":"Jane Doe","username":"janedoe","email":"jane@example.com","password":"Secret@123","confirmPassword":"Secret@123"}'
-```
-
-### Login
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"jane@example.com","password":"Secret@123"}'
-```
-
-### Use Protected Endpoint
-```bash
-curl http://localhost:8080/api/auth/me \
-  -H "Authorization: Bearer <accessToken>"
-```
-
-### Forgot Password
-```bash
-curl -X POST http://localhost:8080/api/auth/forgot-password \
-  -H "Content-Type: application/json" \
-  -d '{"email":"jane@example.com"}'
-```
-
-### Reset Password
-```bash
-curl -X POST http://localhost:8080/api/auth/reset-password \
-  -H "Content-Type: application/json" \
-  -d '{"token":"<from-email>","newPassword":"NewSecret@123","confirmPassword":"NewSecret@123"}'
-```
-
-### Refresh Token
-```bash
-curl -X POST http://localhost:8080/api/auth/refresh-token \
-  -H "Content-Type: application/json" \
-  -d '{"refreshToken":"<refreshToken>"}'
-```
-
-### Logout
-```bash
-curl -X POST http://localhost:8080/api/auth/logout \
-  -H "Authorization: Bearer <accessToken>"
-```
-
----
-
-## Token Strategy
-| Token | Lifetime | Storage |
-|-------|----------|---------|
-| Access token | 15 min | Client memory |
-| Refresh token | 7 days | BCrypt-hashed in DB |
-
-- Refresh token is **rotated** on every `/refresh-token` call
-- Logout **revokes** refresh token server-side
-- Password reset/change **invalidates all sessions**
-- Forgot password **never reveals** if email exists (anti-enumeration)
-
-## Project Structure
-```
-src/main/java/com/robotest/
-├── RobotestBackendApplication.java
-├── config/
-│   ├── SecurityConfig.java       ← Spring Security + JWT filter chain
-│   └── DataInitializer.java      ← Seeds roles + admin on startup
-├── controller/
-│   └── AuthController.java       ← All auth endpoints
-├── dto/
-│   ├── request/                  ← RegisterRequest, LoginRequest, etc.
-│   └── response/                 ← ApiResponse, AuthResponse, UserResponse
-├── entity/
-│   ├── User.java
-│   └── Role.java
-├── enums/
-│   └── RoleName.java
-├── exception/
-│   ├── AppException.java
-│   └── GlobalExceptionHandler.java
-├── repository/
-│   ├── UserRepository.java
-│   └── RoleRepository.java
-├── security/
-│   ├── JwtService.java           ← Token generation + validation
-│   ├── JwtAuthenticationFilter.java
-│   └── UserDetailsServiceImpl.java
-└── service/
-    ├── AuthService.java          ← All business logic
-    └── EmailService.java         ← HTML email sending
-```
+*Frontend runs on `http://localhost:5173`*
